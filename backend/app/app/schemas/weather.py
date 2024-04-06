@@ -10,7 +10,7 @@ class Weather(WeatherBase):
     pass
 
 
-class WeatherNotFound(WeatherBase):
+class WeatherNotFound(BaseModel):
     detail: str
 
     class Config:

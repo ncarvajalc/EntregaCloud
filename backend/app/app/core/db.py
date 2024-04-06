@@ -25,7 +25,7 @@ def create_tables():
 
 
 def seed_data():
-    from app.models import Weather
+    from app.models.weather import Weather
 
     db = SessionLocal()
     try:

@@ -1,4 +1,4 @@
-from app.models import Weather
+from app.models.weather import Weather
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
