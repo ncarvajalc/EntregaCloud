@@ -49,15 +49,23 @@ def create_video_task(db: Session, file: UploadFile):
     db.refresh(task)
     return task
 
-def update_task(db: Session, task_id: str, status: str):
+def update_task(db: Session, task_id: str, new_status: str):
     task_to_update = db.query(Task).filter(Task.id == task_id).first()
     if not task_to_update:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task with given id not found",
         )
-    task_to_update.status = status
-    task_to_update.url = f'http://localhost/api/tasks/{task_id}_{task_to_update.fileName}/download'
+    
+    if new_status not in ["uploaded", "processed"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The status must be either 'uploaded' or 'processed'",
+        )
+
+    task_to_update.status = new_status
+    if new_status == "processed":
+        task_to_update.url = f'http://localhost/api/tasks/{task_id}_{task_to_update.fileName}/download'
     db.commit()
     db.refresh(task_to_update)
     return task_to_update

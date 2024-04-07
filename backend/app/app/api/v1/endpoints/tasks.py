@@ -36,7 +36,8 @@ async def create_task(file:UploadFile = File(...), db: Session = Depends(get_db)
 @router.patch(
     "/{task_id}",
     response_model=Task,
-    responses={404: {"model": TaskNotFound},},
+    responses={404: {"model": TaskNotFound},
+               400: {"model": TaskBadRequest}},
 )
 async def update_task_status(task_id: int, status: str, db: Session = Depends(get_db)):
     """
@@ -88,4 +89,5 @@ async def delete_task_by_id(task_id: int, db: Session = Depends(get_db)): #TODO:
     """
     Permite eliminar una tarea en la aplicación. El usuario requiere autorización.
     """
-    return delete_task(db, task_id)
+    delete_task(db, task_id)
+    return {"detail": "Task deleted successfully"}
