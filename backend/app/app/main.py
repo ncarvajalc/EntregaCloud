@@ -2,7 +2,9 @@ import shutil
 from fastapi import (
     FastAPI,
     File,
+    HTTPException,
     UploadFile,
+    status,
 )
 from app.api.v1.api import api_router as api_router_v1
 from app.core.config import settings
@@ -76,24 +78,43 @@ async def upload_file(file: UploadFile):
     return file_path
 
 
-# Celery task test endpoint
+def is_video_file(content_type: str) -> bool:
+    allowed_mime_types = [
+        "video/mp4",
+        "video/avi",
+        "video/mpeg",
+        "video/quicktime",
+        "video/x-msvideo",
+        "video/x-ms-wmv",
+    ]
+    return content_type in allowed_mime_types
+
+
 @app.post("/edit_video", tags=["celery"])
 async def edit_video(file: UploadFile = File(...)):
     """
-    Celery test endpoint
+    Celery test endpoint that only accepts video files.
     """
+    if not is_video_file(file.content_type):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File type not supported. Please upload a video file.",
+        )
     file_path = await upload_file(file)
     task = celery.send_task("tasks.edit_video", args=[file_path])
     return {"task_id": task.id}
 
 
 @app.get("/check/{task_id}", tags=["celery"])
-def check_task(task_id: str) -> str:
+def check_task(task_id: str):
+    """
+    Check the status of a Celery task.
+    """
     res = celery.AsyncResult(task_id)
     if res.state == states.PENDING:
         return res.state
     else:
-        return str(res.result)
+        return res.result
 
 
 # Add Routers

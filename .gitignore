@@ -134,3 +134,11 @@ sonarqube/data
 sonarqube/logs
 .terraform
 
+# Video files
+*.mp4
+*.mov
+*.avi
+*.wmv
+*.flv
+*.mkv
+*.webm
