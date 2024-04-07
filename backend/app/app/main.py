@@ -1,5 +1,8 @@
+import shutil
 from fastapi import (
     FastAPI,
+    File,
+    UploadFile,
 )
 from app.api.v1.api import api_router as api_router_v1
 from app.core.config import settings
@@ -7,6 +10,9 @@ from contextlib import asynccontextmanager
 from starlette.middleware.cors import CORSMiddleware
 from app.core.db import create_tables, seed_data
 from fastapi.responses import PlainTextResponse
+from app.worker import celery
+from celery import states
+import os
 
 
 # Lifespan events
@@ -56,6 +62,38 @@ async def root():
     Healthcheck for the app
     """
     return "Up and running! Visit /docs for API documentation."
+
+
+# Upload file helper function
+async def upload_file(file: UploadFile):
+    file_path = f".{settings.SHARED_VOLUME_PATH}/original_files/{file.filename}"
+    # Print current os path
+    print(os.getcwd())
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    await file.close()
+    return file_path
+
+
+# Celery task test endpoint
+@app.post("/edit_video", tags=["celery"])
+async def edit_video(file: UploadFile = File(...)):
+    """
+    Celery test endpoint
+    """
+    file_path = await upload_file(file)
+    task = celery.send_task("tasks.edit_video", args=[file_path])
+    return {"task_id": task.id}
+
+
+@app.get("/check/{task_id}", tags=["celery"])
+def check_task(task_id: str) -> str:
+    res = celery.AsyncResult(task_id)
+    if res.state == states.PENDING:
+        return res.state
+    else:
+        return str(res.result)
 
 
 # Add Routers

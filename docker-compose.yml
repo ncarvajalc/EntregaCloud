@@ -11,6 +11,9 @@ services:
     expose:
       - 8000
     env_file: "./backend/.env"
+    depends_on:
+      postgres:
+        condition: service_healthy
   
   postgres:
     container_name: cloud_postgres
@@ -43,6 +46,29 @@ services:
       - nginx_html:/usr/share/nginx/html
     depends_on:
       - fastapi_server
+
+  celery_worker:
+    container_name: cloud_celery_worker
+    build: ./worker
+    restart: always
+    command: "sh -c 'celery -A tasks worker -l info -E'"
+    volumes:
+      - ./worker:/code
+      - ./backend/app/uploads:/code${SHARED_VOLUME_PATH}
+    env_file: "./.env"
+    environment:
+      - C_FORCE_ROOT=true
+    expose:
+      - 8000
+    depends_on:
+      - fastapi_server
+      - redis
+
+  redis:
+    image: redis:alpine
+    container_name: cloud_redis
+    expose:
+      - 6379
 
 volumes:
   nginx_logs:
