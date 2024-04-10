@@ -17,6 +17,7 @@ from celery import states
 import os
 from fastapi.security import OAuth2PasswordBearer
 
+
 # Lifespan events
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -120,4 +121,4 @@ def check_task(task_id: str):
 
 
 # Add Routers
-app.include_router(api_router_v1)
+app.include_router(api_router_v1, prefix="/api")

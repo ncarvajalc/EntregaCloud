@@ -62,7 +62,6 @@ def create_user(db: Session, user: UserSchema):
         email=user.email,
         username=user.username,
         password1=hashed_password,
-        password2=hashed_password,
     )
 
     # Save the user to the database
@@ -70,7 +69,6 @@ def create_user(db: Session, user: UserSchema):
     db.commit()
     db.refresh(db_user)
     return db_user
-
 
 
 def authenticate_user(user: UserSchemaLogin, db: Session):
@@ -84,12 +82,13 @@ def authenticate_user(user: UserSchemaLogin, db: Session):
         return False
 
     if not pwd_context.verify(user.password, db_user.password1):
-                raise HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
     access_token = create_access_token(data={"sub": db_user.username})
     return {"access_token": access_token, "token_type": "bearer"}
+
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
