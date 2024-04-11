@@ -9,7 +9,7 @@ from app.core.config import settings
 import shutil
 from fastapi.responses import FileResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
-import uuid
+from uuid import UUID
 
 
 router = APIRouter()
@@ -46,12 +46,11 @@ async def create_task(file:UploadFile = File(...), auth: HTTPAuthorizationCreden
     responses={404: {"model": TaskNotFound},
                400: {"model": TaskBadRequest}},
 )
-async def update_task_status(task_id: str, status: str, db: Session = Depends(get_db)):
+async def update_task_status(task_id: UUID, status: str, db: Session = Depends(get_db)):
     """
     Permite actualizar el estado de una tarea en la aplicación. 
     """
-    id = validate_id(task_id)
-    return update_task(db, id, status)
+    return update_task(db, task_id, status)
 
 @router.get(
     "/",
@@ -71,13 +70,12 @@ async def get_tasks(max:Optional[int] = None, order:Optional[int] = None, auth: 
                401: {"model": TaskUnauthorized},
                400: {"model": TaskBadRequest}},
 )
-async def get_task(task_id: str, auth: HTTPAuthorizationCredentials = Depends(bearer), db: Session = Depends(get_db)):
+async def get_task(task_id: UUID, auth: HTTPAuthorizationCredentials = Depends(bearer), db: Session = Depends(get_db)):
     """
     Permite recuperar la información de una tarea en la aplicación. El usuario requiere autorización.
     """
-    id = validate_id(task_id)
     verify_token(auth.credentials)
-    return get_task_by_id(db, id)
+    return get_task_by_id(db, task_id)
 
 @router.get(
     "/{file_name}/download",
@@ -97,11 +95,10 @@ async def download_file_by_id(file_name: str):
                403: {"model": TaskForbiddenDelete},
                400: {"model": TaskBadRequest}},
 )
-async def delete_task_by_id(task_id: str, auth: HTTPAuthorizationCredentials = Depends(bearer), db: Session = Depends(get_db)):
+async def delete_task_by_id(task_id: UUID, auth: HTTPAuthorizationCredentials = Depends(bearer), db: Session = Depends(get_db)):
     """
     Permite eliminar una tarea en la aplicación. El usuario requiere autorización.
     """
-    id = validate_id(task_id)
     verify_token(auth.credentials)
-    delete_task(db, id)
+    delete_task(db, task_id)
     return TaskSuccesfullDelete(detail="Task deleted successfully")

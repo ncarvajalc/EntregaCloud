@@ -85,10 +85,3 @@ def delete_task(db: Session, task_id: uuid):
     db.delete(task)
     db.commit()
     return task
-
-def validate_id(id: str):
-    try:
-        return uuid.UUID(id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="The task id is not valid. Please provide a valid task id.")
-
