@@ -5,7 +5,7 @@ from fastapi import HTTPException, status, UploadFile
 from passlib.context import CryptContext
 import re
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 SECRET_KEY = "your-secret-key"
 ALGORITHM = "HS256"
@@ -94,9 +94,9 @@ def authenticate_user(user: UserSchemaLogin, db: Session):
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.now() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now() + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt

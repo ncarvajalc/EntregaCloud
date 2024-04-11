@@ -1,10 +1,11 @@
 from pydantic import BaseModel
 from datetime import datetime
+from uuid import UUID
 
 class TaskBase(BaseModel):
-    id: int
-    fileName: str
-    timeStamp: datetime
+    id: UUID
+    file_name: str
+    time_stamp: datetime
     status: str
     url: str
     
@@ -49,5 +50,15 @@ class TaskBadRequest(BaseModel):
         json_schema_extra = {
             "example": {
                 "detail": "The file type is not supported. Please upload a video file.",
+            }
+        }
+
+class TaskSuccesfullDelete(BaseModel):
+    detail: str
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "detail": "Task deleted successfully",
             }
         }

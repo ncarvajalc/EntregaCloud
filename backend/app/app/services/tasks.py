@@ -2,6 +2,8 @@ from app.models.tasks import Task
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, UploadFile
 from app.core.config import settings
+import uuid
+from app.models.tasks import TaskStatus 
 
 def get_all_tasks(db: Session, max: int, order: int):
 
@@ -15,7 +17,7 @@ def get_all_tasks(db: Session, max: int, order: int):
 
     return tasks.all()
 
-def get_task_by_id(db: Session, task_id: str):
+def get_task_by_id(db: Session, task_id: uuid):
     task = db.query(Task).filter(Task.id == task_id).first()
     if not task:
         raise HTTPException(
@@ -42,13 +44,13 @@ def create_video_task(db: Session, file: UploadFile):
             detail="The file type is not supported. Please upload a video file.",
         )
     
-    task = Task(fileName=file.filename)
+    task = Task(file_name=file.filename)
     db.add(task)
     db.commit()
     db.refresh(task)
     return task
 
-def update_task(db: Session, task_id: str, new_status: str):
+def update_task(db: Session, task_id: uuid, new_status: str):
     task_to_update = db.query(Task).filter(Task.id == task_id).first()
     if not task_to_update:
         raise HTTPException(
@@ -56,20 +58,19 @@ def update_task(db: Session, task_id: str, new_status: str):
             detail="Task with given id not found",
         )
     
-    if new_status not in ["uploaded", "processed"]:
+    if new_status not in TaskStatus.__members__:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The status must be either 'uploaded' or 'processed'",
+            detail="The status is not valid. Please provide a valid status.",
         )
 
     task_to_update.status = new_status
-    if new_status == "processed":
-        task_to_update.url = f'{settings.HOST}/api/tasks/{task_id}_{task_to_update.fileName}/download'
+    task_to_update.url = f'{settings.HOST}/api/tasks/{task_id}_{task_to_update.file_name}/download'
     db.commit()
     db.refresh(task_to_update)
     return task_to_update
 
-def delete_task(db: Session, task_id: str):
+def delete_task(db: Session, task_id: uuid):
     task = db.query(Task).filter(Task.id == task_id).first()
     if not task:
         raise HTTPException(
@@ -84,4 +85,10 @@ def delete_task(db: Session, task_id: str):
     db.delete(task)
     db.commit()
     return task
+
+def validate_id(id: str):
+    try:
+        return uuid.UUID(id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="The task id is not valid. Please provide a valid task id.")
 

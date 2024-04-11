@@ -1,5 +1,5 @@
-from app.schemas.tasks import Task, TaskNotFound, TaskForbiddenDelete, TaskUnauthorized, TaskBadRequest
-from app.services.tasks import get_all_tasks, get_task_by_id, delete_task, create_video_task, update_task
+from app.schemas.tasks import Task, TaskNotFound, TaskForbiddenDelete, TaskUnauthorized, TaskBadRequest, TaskSuccesfullDelete
+from app.services.tasks import get_all_tasks, get_task_by_id, delete_task, create_video_task, update_task, validate_id
 from app.services.auth import verify_token 
 from app.core.db import get_db
 from fastapi import APIRouter, Depends, UploadFile, File
@@ -9,6 +9,7 @@ from app.core.config import settings
 import shutil
 from fastapi.responses import FileResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
+import uuid
 
 
 router = APIRouter()
@@ -28,8 +29,8 @@ async def create_task(file:UploadFile = File(...), auth: HTTPAuthorizationCreden
     verify_token(auth.credentials)
 
     task = create_video_task(db, file)
-    fileName = f"{task.id}_{file.filename}"
-    file_path = f".{settings.SHARED_VOLUME_PATH}/original_files/{fileName}"
+    file_name = f"{task.id}_{file.filename}"
+    file_path = f".{settings.SHARED_VOLUME_PATH}/original_files/{file_name}"
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
@@ -45,11 +46,12 @@ async def create_task(file:UploadFile = File(...), auth: HTTPAuthorizationCreden
     responses={404: {"model": TaskNotFound},
                400: {"model": TaskBadRequest}},
 )
-async def update_task_status(task_id: int, status: str, db: Session = Depends(get_db)):
+async def update_task_status(task_id: str, status: str, db: Session = Depends(get_db)):
     """
     Permite actualizar el estado de una tarea en la aplicación. 
     """
-    return update_task(db, task_id, status)
+    id = validate_id(task_id)
+    return update_task(db, id, status)
 
 @router.get(
     "/",
@@ -66,37 +68,40 @@ async def get_tasks(max:Optional[int] = None, order:Optional[int] = None, auth: 
     "/{task_id}",
     response_model=Task,
     responses={404: {"model": TaskNotFound},
-               401: {"model": TaskUnauthorized}},
+               401: {"model": TaskUnauthorized},
+               400: {"model": TaskBadRequest}},
 )
-async def get_task(task_id: int, auth: HTTPAuthorizationCredentials = Depends(bearer), db: Session = Depends(get_db)):
+async def get_task(task_id: str, auth: HTTPAuthorizationCredentials = Depends(bearer), db: Session = Depends(get_db)):
     """
     Permite recuperar la información de una tarea en la aplicación. El usuario requiere autorización.
     """
+    id = validate_id(task_id)
     verify_token(auth.credentials)
-    return get_task_by_id(db, task_id)
+    return get_task_by_id(db, id)
 
 @router.get(
-    "/{fileName}/download",
+    "/{file_name}/download",
 )
-async def download_file_by_id(fileName: str):
+async def download_file_by_id(file_name: str):
     """
     Permite descargar el archivo editado de una tarea en la aplicación. El usuario requiere autorización.
     """
-    file_path = f".{settings.SHARED_VOLUME_PATH}/edited_files/{fileName}"
-    # file_path = f".{settings.SHARED_VOLUME_PATH}/original_files/{fileName}"
-    return FileResponse(file_path, media_type='application/octet-stream', filename=fileName)
+    file_path = f".{settings.SHARED_VOLUME_PATH}/edited_files/{file_name}"
+    return FileResponse(file_path, media_type='application/octet-stream', filename=file_name)
 
 @router.delete(
     "/{task_id}",
-    response_model=Task,
+    response_model=TaskSuccesfullDelete,
     responses={404: {"model": TaskNotFound},
                401: {"model": TaskUnauthorized},
-               403: {"model": TaskForbiddenDelete}},
+               403: {"model": TaskForbiddenDelete},
+               400: {"model": TaskBadRequest}},
 )
-async def delete_task_by_id(task_id: int, auth: HTTPAuthorizationCredentials = Depends(bearer), db: Session = Depends(get_db)):
+async def delete_task_by_id(task_id: str, auth: HTTPAuthorizationCredentials = Depends(bearer), db: Session = Depends(get_db)):
     """
     Permite eliminar una tarea en la aplicación. El usuario requiere autorización.
     """
+    id = validate_id(task_id)
     verify_token(auth.credentials)
-    delete_task(db, task_id)
-    return {"detail": "Task deleted successfully"}
+    delete_task(db, id)
+    return TaskSuccesfullDelete(detail="Task deleted successfully")
