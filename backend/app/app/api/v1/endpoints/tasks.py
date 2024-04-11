@@ -1,8 +1,9 @@
 from app.schemas.tasks import Task, TaskNotFound, TaskForbiddenDelete, TaskUnauthorized, TaskBadRequest, TaskSuccesfullDelete
-from app.services.tasks import get_all_tasks, get_task_by_id, delete_task, create_video_task, update_task, validate_id
+from app.services.tasks import get_all_tasks, get_task_by_id, delete_task, create_video_task, update_task
 from app.services.auth import verify_token 
+from app.models.tasks import TaskStatus
 from app.core.db import get_db
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File, Body
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.core.config import settings
@@ -10,6 +11,7 @@ import shutil
 from fastapi.responses import FileResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 from uuid import UUID
+
 
 
 router = APIRouter()
@@ -46,7 +48,7 @@ async def create_task(file:UploadFile = File(...), auth: HTTPAuthorizationCreden
     responses={404: {"model": TaskNotFound},
                400: {"model": TaskBadRequest}},
 )
-async def update_task_status(task_id: UUID, status: str, db: Session = Depends(get_db)):
+async def update_task_status(task_id: UUID, status: TaskStatus, db: Session = Depends(get_db)):
     """
     Permite actualizar el estado de una tarea en la aplicación. 
     """

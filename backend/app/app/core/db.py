@@ -22,18 +22,3 @@ def get_db():
 
 def create_tables():
     Base.metadata.create_all(bind=engine)
-
-
-def seed_data():
-    from app.models.weather import Weather
-
-    db = SessionLocal()
-    try:
-        db.add(Weather(city="Quito", weather="cloudy"))
-        db.add(Weather(city="Bogotá", weather="sunny"))
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        raise e
-    finally:
-        db.close()

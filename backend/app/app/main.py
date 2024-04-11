@@ -10,7 +10,7 @@ from app.api.v1.api import api_router as api_router_v1
 from app.core.config import settings
 from contextlib import asynccontextmanager
 from starlette.middleware.cors import CORSMiddleware
-from app.core.db import create_tables, seed_data
+from app.core.db import create_tables
 from fastapi.responses import PlainTextResponse
 from app.worker import celery
 from celery import states
@@ -31,10 +31,6 @@ def startup():
     print("Creating tables")
     create_tables()
     print("Tables created")
-    print("Seeding data")
-    seed_data()
-    print("Data seeded")
-
 
 def shutdown():
     print("shutdown fastapi")
