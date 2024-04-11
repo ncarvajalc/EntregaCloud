@@ -1,5 +1,5 @@
 from app.schemas.user import TokenData, UserSchema, UserSchemaLogin, UserSignupResponse
-from app.services.auth import authenticate_user, create_user
+from app.services.auth import authenticate_user, create_user, verify_token
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.core.db import get_db
@@ -22,4 +22,4 @@ async def get_user_endpoint(user: UserSchemaLogin, db: Session = Depends(get_db)
     Get user by username and password
     """
     db_user = authenticate_user(user, db)
-    return db_user
+    return db_user  

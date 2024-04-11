@@ -2,8 +2,6 @@ from app.models.tasks import Task
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, UploadFile
 
-
-
 def get_all_tasks(db: Session, max: int, order: int):
 
     tasks = db.query(Task)
