@@ -2,7 +2,7 @@ from app.models.tasks import Task
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, UploadFile
 from app.core.config import settings
-import uuid
+from uuid import UUID
 from app.models.tasks import TaskStatus 
 
 def get_all_tasks(db: Session, max: int, order: int):
@@ -17,7 +17,7 @@ def get_all_tasks(db: Session, max: int, order: int):
 
     return tasks.all()
 
-def get_task_by_id(db: Session, task_id: uuid):
+def get_task_by_id(db: Session, task_id: UUID):
     task = db.query(Task).filter(Task.id == task_id).first()
     if not task:
         raise HTTPException(
@@ -50,7 +50,7 @@ def create_video_task(db: Session, file: UploadFile):
     db.refresh(task)
     return task
 
-def update_task(db: Session, task_id: uuid, new_status: str):
+def update_task(db: Session, task_id: UUID, new_status: str):
     task_to_update = db.query(Task).filter(Task.id == task_id).first()
     if not task_to_update:
         raise HTTPException(
@@ -70,7 +70,7 @@ def update_task(db: Session, task_id: uuid, new_status: str):
     db.refresh(task_to_update)
     return task_to_update
 
-def delete_task(db: Session, task_id: uuid):
+def delete_task(db: Session, task_id: UUID):
     task = db.query(Task).filter(Task.id == task_id).first()
     if not task:
         raise HTTPException(
