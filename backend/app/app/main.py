@@ -15,6 +15,7 @@ from fastapi.responses import PlainTextResponse
 from app.worker import celery
 from celery import states
 import os
+from fastapi.security import OAuth2PasswordBearer
 
 
 # Lifespan events
@@ -45,6 +46,8 @@ app = FastAPI(
     openapi_url="/openapi.json",
     lifespan=lifespan,
 )
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # Set all CORS origins enabled
 if settings.BACKEND_CORS_ORIGINS:
@@ -118,4 +121,4 @@ def check_task(task_id: str):
 
 
 # Add Routers
-app.include_router(api_router_v1)
+app.include_router(api_router_v1, prefix="/api")
