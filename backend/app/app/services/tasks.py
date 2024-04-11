@@ -1,6 +1,7 @@
 from app.models.tasks import Task
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, UploadFile
+from app.core.config import settings
 
 def get_all_tasks(db: Session, max: int, order: int):
 
@@ -63,7 +64,7 @@ def update_task(db: Session, task_id: str, new_status: str):
 
     task_to_update.status = new_status
     if new_status == "processed":
-        task_to_update.url = f'http://localhost/api/tasks/{task_id}_{task_to_update.fileName}/download'
+        task_to_update.url = f'{settings.HOST}/api/tasks/{task_id}_{task_to_update.fileName}/download'
     db.commit()
     db.refresh(task_to_update)
     return task_to_update
