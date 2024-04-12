@@ -5,6 +5,7 @@ click==8.1.7
 click-didyoumean==0.3.1
 click-plugins==1.1.1
 click-repl==0.3.0
+httpx==0.27.0
 kombu==5.3.6
 prompt-toolkit==3.0.43
 python-dateutil==2.9.0.post0
