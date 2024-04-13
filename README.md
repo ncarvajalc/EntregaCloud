@@ -25,10 +25,10 @@ The API documentation can be found at `http://localhost/docs`
 ## Authors
 
 - Ernesto Carlos Pérez
-- Lina María Gómez 
+- Lina María Gómez
 - Sofía Velásquez
 - Nicolás Carvajal
 
-# Wiki
+## Wiki
 
 The wiki of the project with its documentation can be found [here](https://github.com/ncarvajalc/EntregaCloud/wiki)
