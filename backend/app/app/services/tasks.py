@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 from app.models.tasks import TaskStatus
 
 
-def get_all_tasks(db: Session, max: int, order: int, user_id: UUID):
+def get_all_tasks(db: Session, max: int, order: int, user_id: str):
 
     tasks = db.query(Task).filter(Task.user_id == user_id)
 
@@ -26,7 +26,7 @@ def get_all_tasks(db: Session, max: int, order: int, user_id: UUID):
     return tasks.all()
 
 
-def get_task_by_id(db: Session, task_id: UUID, user_id: UUID):
+def get_task_by_id(db: Session, task_id: UUID, user_id: str):
     task = db.query(Task).filter(Task.id == task_id, Task.user_id == user_id).one_or_none()
     if not task:
         raise HTTPException(
@@ -36,7 +36,7 @@ def get_task_by_id(db: Session, task_id: UUID, user_id: UUID):
     return task
 
 
-def create_video_task(db: Session, file_path: str, id: UUID, user_id: UUID):
+def create_video_task(db: Session, file_path: str, id: UUID, user_id: str):
     file_name = os.path.basename(file_path)
     
     task = Task(id=id, file_name=file_name, user_id=user_id)
@@ -64,7 +64,7 @@ def update_task(db: Session, task_id: UUID):
     return task_to_update
 
 
-def delete_task(db: Session, task_id: UUID, user_id: UUID):
+def delete_task(db: Session, task_id: UUID, user_id: str):
     task = db.query(Task).filter(Task.id == task_id, Task.user_id == user_id).one_or_none()
     if not task:
         raise HTTPException(

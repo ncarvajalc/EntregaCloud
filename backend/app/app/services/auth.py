@@ -87,7 +87,7 @@ def authenticate_user(user: UserSchemaLogin, db: Session):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
         )
-    access_token = create_access_token(data={"sub": str(db_user.id)})
+    access_token = create_access_token(data={"sub": db_user.username})
 
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -105,7 +105,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 def verify_token(token: str):
     try:
         decoded_token = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return UUID(decoded_token["sub"])
+        return decoded_token["sub"]
     except jwt.PyJWTError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

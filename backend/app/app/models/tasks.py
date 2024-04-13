@@ -16,7 +16,7 @@ class Task(Base):
     time_stamp = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
     status = Column(String, index=True, default=TaskStatus.uploaded)
     url = Column(String, default="the video is being processed")
-    user_id = Column(UUID, nullable=False)
+    user_id = Column(String, nullable=False)
 
     __table_args__ = (
         CheckConstraint(status.in_(list(TaskStatus)), name='valid_status'),
