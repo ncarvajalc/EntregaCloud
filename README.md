@@ -16,7 +16,7 @@ This is a FastAPI project for the Cloud Software Development course at Uniandes.
     docker-compose up --build
     ```
 
-3. The FastAPI server will be running at `http://localhost`
+3. The server will be running at `http://localhost`
 
 ## API Documentation
 
