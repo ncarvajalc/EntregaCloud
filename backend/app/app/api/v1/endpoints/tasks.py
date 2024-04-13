@@ -3,7 +3,8 @@ from uuid import UUID
 from app.schemas.tasks import (
     FileNotFound,
     Task,
-    TaskGet,
+    TaskGetAll,
+    TaskGetOne,
     TaskNotFound,
     TaskForbiddenDelete,
     TaskUnauthorized,
@@ -74,7 +75,7 @@ async def update_task_status(
 
 @router.get(
     "",
-    response_model=List[TaskGet],
+    response_model=List[TaskGetAll],
 )
 async def get_tasks(
     max: Optional[int] = None,
@@ -91,7 +92,7 @@ async def get_tasks(
 
 @router.get(
     "/{task_id}",
-    response_model=TaskGet,
+    response_model=TaskGetOne,
     responses={
         404: {"model": TaskNotFound},
         401: {"model": TaskUnauthorized},

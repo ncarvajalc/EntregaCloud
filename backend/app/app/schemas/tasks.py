@@ -12,8 +12,12 @@ class Task(TaskBase):
     time_stamp: datetime
     url: str
 
-class TaskGet(TaskBase):
+class TaskGetAll(TaskBase):
     pass
+
+class TaskGetOne(TaskGetAll):
+    url: str
+
 
 class TaskNotFound(BaseModel):
     detail: str
