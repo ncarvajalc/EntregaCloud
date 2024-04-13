@@ -6,13 +6,17 @@ from uuid import UUID
 class TaskBase(BaseModel):
     id: UUID
     file_name: str
-    time_stamp: datetime
     status: str
-    url: str
-
 
 class Task(TaskBase):
+    time_stamp: datetime
+    url: str
+
+class TaskGetAll(TaskBase):
     pass
+
+class TaskGetOne(TaskGetAll):
+    url: str
 
 
 class TaskNotFound(BaseModel):

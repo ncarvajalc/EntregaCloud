@@ -9,9 +9,9 @@ from uuid import UUID, uuid4
 from app.models.tasks import TaskStatus
 
 
-def get_all_tasks(db: Session, max: int, order: int):
+def get_all_tasks(db: Session, max: int, order: int, user_id: str):
 
-    tasks = db.query(Task)
+    tasks = db.query(Task).filter(Task.user_id == user_id)
 
     if order:
         tasks = (
@@ -26,26 +26,27 @@ def get_all_tasks(db: Session, max: int, order: int):
     return tasks.all()
 
 
-def get_task_by_id(db: Session, task_id: UUID):
-    task = db.query(Task).filter(Task.id == task_id).first()
+def get_task_by_id(db: Session, task_id: UUID, user_id: str):
+    task = db.query(Task).filter(Task.id == task_id, Task.user_id == user_id).one_or_none()
     if not task:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task with given id not found",
+            detail="The user does not have a task with the given id.",
         )
     return task
 
 
-def create_video_task(db: Session, file_path: str, id: UUID):
+def create_video_task(db: Session, file_path: str, id: UUID, user_id: str):
     file_name = os.path.basename(file_path)
-    task = Task(id=id, file_name=file_name)
+    
+    task = Task(id=id, file_name=file_name, user_id=user_id)
     db.add(task)
     db.commit()
     db.refresh(task)
     return task
 
 
-def update_task(db: Session, task_id: UUID, new_status: str):
+def update_task(db: Session, task_id: UUID):
     task_to_update = db.query(Task).filter(Task.id == task_id).first()
     if not task_to_update:
         raise HTTPException(
@@ -53,13 +54,7 @@ def update_task(db: Session, task_id: UUID, new_status: str):
             detail="Task with given id not found",
         )
 
-    if new_status not in TaskStatus.__members__:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The status is not valid. Please provide a valid status.",
-        )
-
-    task_to_update.status = new_status
+    task_to_update.status = TaskStatus.processed
     file_without_extension = os.path.splitext(task_to_update.file_name)[0]
     task_to_update.url = (
         f"{settings.HOST}/api/tasks/{file_without_extension}.mp4/download"
@@ -69,20 +64,30 @@ def update_task(db: Session, task_id: UUID, new_status: str):
     return task_to_update
 
 
-def delete_task(db: Session, task_id: UUID):
-    task = db.query(Task).filter(Task.id == task_id).first()
+def delete_task(db: Session, task_id: UUID, user_id: str):
+    task = db.query(Task).filter(Task.id == task_id, Task.user_id == user_id).one_or_none()
     if not task:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task with given id not found",
+            detail="The user does not have a task with the given id.",
         )
-    if task.status == "uploaded":
+    if task.status != TaskStatus.processed:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="The task cannot be deleted because it is being processed by the system.",
         )
-    db.delete(task)
-    db.commit()
+    
+    try :
+        os.remove(f".{settings.SHARED_VOLUME_PATH}/original_files/{task.file_name}")
+        os.remove(f".{settings.SHARED_VOLUME_PATH}/edited_files/{os.path.splitext(task.file_name)[0]}.mp4")
+        db.delete(task)
+        db.commit()
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found",
+        )
+
     return task
 
 

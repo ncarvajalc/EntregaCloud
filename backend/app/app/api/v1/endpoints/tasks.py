@@ -3,6 +3,8 @@ from uuid import UUID
 from app.schemas.tasks import (
     FileNotFound,
     Task,
+    TaskGetAll,
+    TaskGetOne,
     TaskNotFound,
     TaskForbiddenDelete,
     TaskUnauthorized,
@@ -46,14 +48,14 @@ async def create_task(
     db: Session = Depends(get_db),
 ):
     """
-    Permite crear una nueva tarea de edición de video. El usuario requiere autorización
+    Creates a new video editing task. User requires authorization
     """
+    user_id = verify_token(auth.credentials)
     validate_is_video_file(file)
-    verify_token(auth.credentials)
 
     file_path = await upload_file(file)
     celery_task = celery.send_task("tasks.edit_video", args=[file_path])
-    task = create_video_task(db, file_path, celery_task.id)
+    task = create_video_task(db, file_path, celery_task.id, user_id)
     return task
 
 
@@ -63,17 +65,17 @@ async def create_task(
     responses={404: {"model": TaskNotFound}, 400: {"model": TaskBadRequest}},
 )
 async def update_task_status(
-    task_id: UUID, status: TaskStatus, db: Session = Depends(get_db)
+    task_id: UUID, db: Session = Depends(get_db)
 ):
     """
-    Permite actualizar el estado de una tarea en la aplicación.
+    Updates the status and url of a task.
     """
-    return update_task(db, task_id, status)
+    return update_task(db, task_id)
 
 
 @router.get(
     "",
-    response_model=List[Task],
+    response_model=List[TaskGetAll],
 )
 async def get_tasks(
     max: Optional[int] = None,
@@ -82,15 +84,15 @@ async def get_tasks(
     db: Session = Depends(get_db),
 ):
     """
-    Permite recuperar todas las tareas de edición de un usuario autorizado en la aplicación.
+    Retrieves all editing tasks from an authorized user in the application.
     """
-    verify_token(auth.credentials)
-    return get_all_tasks(db, max, order)
+    user_id = verify_token(auth.credentials)
+    return get_all_tasks(db, max, order, user_id)
 
 
 @router.get(
     "/{task_id}",
-    response_model=Task,
+    response_model=TaskGetOne,
     responses={
         404: {"model": TaskNotFound},
         401: {"model": TaskUnauthorized},
@@ -103,10 +105,10 @@ async def get_task(
     db: Session = Depends(get_db),
 ):
     """
-    Permite recuperar la información de una tarea en la aplicación. El usuario requiere autorización.
+    Retrieves information about a task in the application. The user requires authorization.
     """
-    verify_token(auth.credentials)
-    return get_task_by_id(db, task_id)
+    user_id = verify_token(auth.credentials)
+    return get_task_by_id(db, task_id, user_id)
 
 
 @router.get(
@@ -114,9 +116,9 @@ async def get_task(
     response_class=FileResponse,
     responses={404: {"model": FileNotFound}},
 )
-async def download_file_by_id(file_name: str):
+async def download_file(file_name: str):
     """
-    Permite descargar el archivo editado de una tarea en la aplicación. El usuario requiere autorización.
+    Download the edited file of a task in the application.
     """
     file_path = f".{settings.SHARED_VOLUME_PATH}/edited_files/{file_name}"
 
@@ -147,8 +149,8 @@ async def delete_task_by_id(
     db: Session = Depends(get_db),
 ):
     """
-    Permite eliminar una tarea en la aplicación. El usuario requiere autorización.
+    Deletes a task in the application. The user requires authorization.
     """
-    verify_token(auth.credentials)
-    delete_task(db, task_id)
+    user_id = verify_token(auth.credentials)
+    delete_task(db, task_id, user_id)
     return TaskSuccesfullDelete(detail="Task deleted successfully")

@@ -6,6 +6,7 @@ from passlib.context import CryptContext
 import re
 import jwt
 from datetime import datetime, timedelta, timezone
+from uuid import UUID
 
 SECRET_KEY = "your-secret-key"
 ALGORITHM = "HS256"
@@ -104,9 +105,10 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 def verify_token(token: str):
     try:
         decoded_token = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return decoded_token
+        return decoded_token["sub"]
     except jwt.PyJWTError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
         )
+    

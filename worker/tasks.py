@@ -27,10 +27,10 @@ def edit_video(self, file_path: str):
         print(f"Error executing FFmpeg: {e}")
         return {"status": "failure", "error": str(e)}
 
-    print("URL", f"{BACKEND_URL}/api/tasks/{task_id}/?status=processed")
+    print("URL", f"{BACKEND_URL}/api/tasks/{task_id}")
 
     response = httpx.patch(
-        f"{BACKEND_URL}/api/tasks/{task_id}?status=processed",
+        f"{BACKEND_URL}/api/tasks/{task_id}",
     )
 
     if response.status_code != 200:
