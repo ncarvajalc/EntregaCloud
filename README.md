@@ -13,7 +13,7 @@ This is a FastAPI project for the Cloud Software Development course at Uniandes.
 2. Run the following command to run the Docker image:
 
     ```bash
-    docker-compose up
+    docker-compose up --build
     ```
 
 3. The FastAPI server will be running at `http://localhost`
