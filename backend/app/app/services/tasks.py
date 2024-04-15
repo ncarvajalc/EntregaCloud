@@ -112,7 +112,7 @@ async def validate_is_video_file(file: UploadFile):
         "video/x-msvideo",
         "video/x-ms-wmv",
     ]
-
+    
     if file.content_type not in allowed_mime_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

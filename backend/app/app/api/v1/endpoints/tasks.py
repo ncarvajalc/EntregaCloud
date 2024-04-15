@@ -51,7 +51,7 @@ async def create_task(
     Creates a new video editing task. User requires authorization
     """
     user_id = verify_token(auth.credentials)
-    validate_is_video_file(file)
+    await validate_is_video_file(file)
 
     file_path = await upload_file(file)
     celery_task = celery.send_task("tasks.edit_video", args=[file_path])
