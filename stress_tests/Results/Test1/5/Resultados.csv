@@ -1,0 +1,6 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1713544502791,324,Solicitud de Registro,200,OK,Grupo de Usuarios 1-1,text,true,,319,224,1,1,http://localhost/api/auth/login,319,0,5
+1713544508758,283,Solicitud de Registro,200,OK,Grupo de Usuarios 1-2,text,true,,319,224,1,1,http://localhost/api/auth/login,283,0,2
+1713544514763,282,Solicitud de Registro,200,OK,Grupo de Usuarios 1-3,text,true,,319,224,1,1,http://localhost/api/auth/login,282,0,2
+1713544520761,284,Solicitud de Registro,200,OK,Grupo de Usuarios 1-4,text,true,,319,224,1,1,http://localhost/api/auth/login,284,0,2
+1713544526759,270,Solicitud de Registro,200,OK,Grupo de Usuarios 1-5,text,true,,319,224,1,1,http://localhost/api/auth/login,270,0,1
