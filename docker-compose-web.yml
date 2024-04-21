@@ -11,27 +11,6 @@ services:
     expose:
       - 8000
     env_file: "./backend/.env"
-    # depends_on:
-      # postgres:
-      #   condition: service_healthy
-  
-  # postgres:
-  #   container_name: cloud_postgres
-  #   image: postgres
-  #   restart: always
-  #   expose:
-  #     - 5432
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   environment:
-  #     POSTGRES_USER: ${POSTGRES_USER}
-  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-  #     POSTGRES_DB: ${POSTGRES_DB}
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
 
   nginx_reverse_proxy:
     container_name: nginx_reverse_proxy
@@ -50,4 +29,3 @@ services:
 volumes:
   nginx_logs:
   nginx_html:
-  postgres_data:
