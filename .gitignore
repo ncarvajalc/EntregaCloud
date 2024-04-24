@@ -142,3 +142,6 @@ sonarqube/logs
 *.flv
 *.mkv
 *.webm
+
+# GCP service account key
+credentials.json
