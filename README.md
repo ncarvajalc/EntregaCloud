@@ -23,7 +23,9 @@ This is a FastAPI project for the Cloud Software Development course at Uniandes.
 The API documentation can be found at `http://localhost/docs`
 
 ## Video
-The video can be found at: https://youtu.be/71YpB9W97zs
+
+The video can be found at: `https://youtu.be/vw6jpMszz9M`
+
 ## Authors
 
 - Ernesto Carlos Pérez
