@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
     SHARED_VOLUME_PATH: str = "/uploads"
     HOST: str = "http://localhost"
+    GCP_BUCKET_NAME: str = "app"
 
     class Config:
         case_sensitive = True
