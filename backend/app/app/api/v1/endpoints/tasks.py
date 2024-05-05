@@ -19,11 +19,20 @@ from app.services.tasks import (
     update_task,
     upload_file,
     validate_is_video_file,
+    download_file_from_bucket,
+    clean_up_file,
 )
 from app.services.auth import verify_token
-from app.models.tasks import TaskStatus
 from app.core.db import get_db
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    UploadFile,
+    File,
+    status,
+    BackgroundTasks,
+)
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.core.config import settings
@@ -52,8 +61,7 @@ async def create_task(
     """
     user_id = verify_token(auth.credentials)
     await validate_is_video_file(file)
-
-    file_path = await upload_file(file)
+    file_path = upload_file(file)
     celery_task = celery.send_task("tasks.edit_video", args=[file_path])
     task = create_video_task(db, file_path, celery_task.id, user_id)
     return task
@@ -64,9 +72,7 @@ async def create_task(
     response_model=Task,
     responses={404: {"model": TaskNotFound}, 400: {"model": TaskBadRequest}},
 )
-async def update_task_status(
-    task_id: UUID, db: Session = Depends(get_db)
-):
+async def update_task_status(task_id: UUID, db: Session = Depends(get_db)):
     """
     Updates the status and url of a task.
     """
@@ -116,10 +122,14 @@ async def get_task(
     response_class=FileResponse,
     responses={404: {"model": FileNotFound}},
 )
-async def download_file(file_name: str):
+async def download_file(
+    background_tasks: BackgroundTasks,
+    file_name: str,
+):
     """
     Download the edited file of a task in the application.
     """
+    download_file_from_bucket(file_name)
     file_path = f".{settings.SHARED_VOLUME_PATH}/edited_files/{file_name}"
 
     if not os.path.exists(file_path):
@@ -128,6 +138,7 @@ async def download_file(file_name: str):
             detail="File not found",
         )
 
+    background_tasks.add_task(clean_up_file, file_path)
     return FileResponse(
         file_path, media_type="application/octet-stream", filename=file_name
     )

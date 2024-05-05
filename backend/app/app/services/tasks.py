@@ -1,4 +1,3 @@
-import shutil
 import os
 from app.models.tasks import Task
 from sqlalchemy.orm import Session
@@ -7,6 +6,7 @@ from app.core.config import settings
 from uuid import UUID, uuid4
 
 from app.models.tasks import TaskStatus
+from google.cloud import storage
 
 
 def get_all_tasks(db: Session, max: int, order: int, user_id: str):
@@ -27,7 +27,9 @@ def get_all_tasks(db: Session, max: int, order: int, user_id: str):
 
 
 def get_task_by_id(db: Session, task_id: UUID, user_id: str):
-    task = db.query(Task).filter(Task.id == task_id, Task.user_id == user_id).one_or_none()
+    task = (
+        db.query(Task).filter(Task.id == task_id, Task.user_id == user_id).one_or_none()
+    )
     if not task:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -38,7 +40,7 @@ def get_task_by_id(db: Session, task_id: UUID, user_id: str):
 
 def create_video_task(db: Session, file_path: str, id: UUID, user_id: str):
     file_name = os.path.basename(file_path)
-    
+
     task = Task(id=id, file_name=file_name, user_id=user_id)
     db.add(task)
     db.commit()
@@ -65,7 +67,9 @@ def update_task(db: Session, task_id: UUID):
 
 
 def delete_task(db: Session, task_id: UUID, user_id: str):
-    task = db.query(Task).filter(Task.id == task_id, Task.user_id == user_id).one_or_none()
+    task = (
+        db.query(Task).filter(Task.id == task_id, Task.user_id == user_id).one_or_none()
+    )
     if not task:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -76,10 +80,9 @@ def delete_task(db: Session, task_id: UUID, user_id: str):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="The task cannot be deleted because it is being processed by the system.",
         )
-    
-    try :
-        os.remove(f".{settings.SHARED_VOLUME_PATH}/original_files/{task.file_name}")
-        os.remove(f".{settings.SHARED_VOLUME_PATH}/edited_files/{os.path.splitext(task.file_name)[0]}.mp4")
+
+    try:
+        delete_files(task)
         db.delete(task)
         db.commit()
     except FileNotFoundError:
@@ -91,14 +94,22 @@ def delete_task(db: Session, task_id: UUID, user_id: str):
     return task
 
 
+def delete_files(task):
+    client = storage.Client()
+    bucket = client.get_bucket(settings.GCP_BUCKET_NAME)
+    blob = bucket.blob(f"original_files/{task.file_name}")
+    blob.delete()
+    blob = bucket.blob(f"edited_files/{os.path.splitext(task.file_name)[0]}.mp4")
+    blob.delete()
+
+
 # Helper functions
-async def upload_file(file: UploadFile):
-    file_path = (
-        f".{settings.SHARED_VOLUME_PATH}/original_files/{str(uuid4())}_{file.filename}"
-    )
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    await file.close()
+def upload_file(file: UploadFile):
+    client = storage.Client()
+    bucket = client.get_bucket(settings.GCP_BUCKET_NAME)
+    file_path = f"original_files/{str(uuid4())}_{file.filename}"
+    blob = bucket.blob(file_path)
+    blob.upload_from_file(file.file)
     return file_path
 
 
@@ -112,9 +123,23 @@ async def validate_is_video_file(file: UploadFile):
         "video/x-msvideo",
         "video/x-ms-wmv",
     ]
-    
+
     if file.content_type not in allowed_mime_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The file type is not supported. Please upload a video file.",
         )
+
+
+def download_file_from_bucket(file_name: str):
+    client = storage.Client()
+    bucket = client.get_bucket(settings.GCP_BUCKET_NAME)
+    blob = bucket.blob(f"edited_files/{file_name}")
+    blob.download_to_filename(
+        f".{settings.SHARED_VOLUME_PATH}/edited_files/{file_name}"
+    )
+    return f".{settings.SHARED_VOLUME_PATH}/edited_files/{file_name}"
+
+
+def clean_up_file(file_path: str):
+    os.remove(file_path)
