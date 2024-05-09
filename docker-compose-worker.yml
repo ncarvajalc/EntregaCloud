@@ -10,8 +10,6 @@ services:
       - ./worker:/code
       - ./backend/app/uploads:/code${SHARED_VOLUME_PATH}
     env_file: "./.env"
-    environment:
-      - C_FORCE_ROOT=true
     expose:
       - 8000
  
