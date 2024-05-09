@@ -11,6 +11,7 @@ click-plugins==1.1.1
 click-repl==0.3.0
 fastapi==0.110.1
 google-cloud-storage==2.16.0
+google-cloud-pubsub==2.21.1
 h11==0.14.0
 httpcore==1.0.5
 httpx==0.27.0
@@ -25,7 +26,6 @@ pydantic_core==2.16.3
 PyJWT==2.8.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
-redis==5.0.3
 six==1.16.0
 sniffio==1.3.1
 SQLAlchemy==2.0.29

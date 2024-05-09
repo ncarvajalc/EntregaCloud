@@ -12,7 +12,6 @@ from contextlib import asynccontextmanager
 from starlette.middleware.cors import CORSMiddleware
 from app.core.db import create_tables
 from fastapi.responses import PlainTextResponse
-from app.worker import celery
 from celery import states
 import os
 from fastapi.security import OAuth2PasswordBearer

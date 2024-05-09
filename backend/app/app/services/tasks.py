@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 
 from app.models.tasks import TaskStatus
 from google.cloud import storage
+from google.cloud import pubsub_v1
 
 
 def get_all_tasks(db: Session, max: int, order: int, user_id: str):
@@ -111,6 +112,21 @@ def upload_file(file: UploadFile):
     blob = bucket.blob(file_path)
     blob.upload_from_file(file.file)
     return file_path
+
+
+def send_task_to_pubsub(file_path: str):
+    publisher = pubsub_v1.PublisherClient()
+    topic_name = "projects/{project_id}/topics/{topic}".format(
+        project_id=settings.GOOGLE_CLOUD_PROJECT,
+        topic="video_tasks",
+    )
+    task_id = uuid4()
+    future = publisher.publish(
+        topic_name,
+        data=f"{task_id} {file_path}".encode("utf-8"),
+    )
+    future.result()
+    return task_id
 
 
 async def validate_is_video_file(file: UploadFile):

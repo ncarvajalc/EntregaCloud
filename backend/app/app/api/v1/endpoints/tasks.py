@@ -16,6 +16,7 @@ from app.services.tasks import (
     get_task_by_id,
     delete_task,
     create_video_task,
+    send_task_to_pubsub,
     update_task,
     upload_file,
     validate_is_video_file,
@@ -38,7 +39,6 @@ from typing import List, Optional
 from app.core.config import settings
 from fastapi.responses import FileResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
-from app.worker import celery
 
 
 router = APIRouter()
@@ -62,8 +62,8 @@ async def create_task(
     user_id = verify_token(auth.credentials)
     await validate_is_video_file(file)
     file_path = upload_file(file)
-    celery_task = celery.send_task("tasks.edit_video", args=[file_path])
-    task = create_video_task(db, file_path, celery_task.id, user_id)
+    task_id = send_task_to_pubsub(file_path)
+    task = create_video_task(db, file_path, task_id, user_id)
     return task
 
 

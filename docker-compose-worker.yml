@@ -5,7 +5,7 @@ services:
     container_name: cloud_celery_worker
     build: ./worker
     restart: always
-    command: "sh -c 'celery -A tasks worker -l info -E'"
+    command: "sh -c 'python tasks.py'"
     volumes:
       - ./worker:/code
       - ./backend/app/uploads:/code${SHARED_VOLUME_PATH}
@@ -14,12 +14,6 @@ services:
       - C_FORCE_ROOT=true
     expose:
       - 8000
-    depends_on:
-      - redis
+ 
 
-  redis:
-    image: redis:alpine
-    container_name: cloud_redis
-    ports:
-      - 6379:6379
 

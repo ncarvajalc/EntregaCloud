@@ -2,42 +2,50 @@ import os
 import shlex
 import subprocess
 import httpx
-from celery import Celery
 from google.cloud import storage
 from dotenv import load_dotenv
+from google.cloud import pubsub_v1
+from google.cloud.pubsub_v1.subscriber.message import Message
+import time
 
 load_dotenv()
 
-CELERY_BROKER_URL = (os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379"),)
-CELERY_RESULT_BACKEND = os.environ.get(
-    "CELERY_RESULT_BACKEND", "redis://localhost:6379"
-)
 SHARED_VOLUME_PATH = os.environ.get("SHARED_VOLUME_PATH", "/uploads")
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://fastapi_server")
 GCP_BUCKET_NAME = os.environ.get("GCP_BUCKET_NAME", "app")
+GOOGLE_CLOUD_PROJECT = os.environ.get("GOOGLE_CLOUD_PROJECT", "project_id")
 
-celery = Celery("tasks", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
+
+def callback(message: Message):
+    print(f"Received message: {message}")
+    try:
+        task_id, file_path = decode_message_data(message)
+        edited_file_path = format_edited_file_path(file_path)
+        client = storage.Client()
+
+        download_file_from_bucket(file_path, client)
+        process_video(file_path, edited_file_path)
+        upload_file_to_bucket(edited_file_path, client)
+        cleanup(file_path, edited_file_path)
+
+        message.ack()
+
+        response = httpx.patch(
+            f"{BACKEND_URL}/api/tasks/{task_id}",
+        )
+
+        if response.status_code != 200:
+            print(f"Failed to update task {task_id} status: {response.text}")
+        print(f"Task {task_id} status updated successfully")
+    except Exception as e:
+        print(f"Error processing message: {str(e)}")
 
 
-@celery.task(name="tasks.edit_video", bind=True)
-def edit_video(self, file_path: str):
-    task_id = self.request.id
-    edited_file_path = format_edited_file_path(file_path)
-    client = storage.Client()
-
-    download_file_from_bucket(file_path, client)
-    process_video(file_path, edited_file_path)
-    upload_file_to_bucket(edited_file_path, client)
-    cleanup(file_path, edited_file_path)
-
-    response = httpx.patch(
-        f"{BACKEND_URL}/api/tasks/{task_id}",
-    )
-
-    if response.status_code != 200:
-        return {"status": "failure", "error": response.text}
-
-    return {"status": "success", "edited_file_path": edited_file_path}
+def decode_message_data(message: Message):
+    data = message.data.decode("utf-8").split()
+    task_id = data[0]
+    file_path = data[1]
+    return task_id, file_path
 
 
 def process_video(file_path, edited_file_path):
@@ -75,3 +83,15 @@ def format_edited_file_path(file_path):
 def cleanup(file_path, edited_file_path):
     os.remove(f".{SHARED_VOLUME_PATH}/{file_path}")
     os.remove(f".{SHARED_VOLUME_PATH}/{edited_file_path}")
+
+
+with pubsub_v1.SubscriberClient() as subscriber:
+    subscription_path = subscriber.subscription_path(
+        GOOGLE_CLOUD_PROJECT, "video_consumer"
+    )
+    future = subscriber.subscribe(subscription_path, callback=callback)
+    print(f"Listening for messages on {subscription_path}...")
+    try:
+        future.result()
+    except KeyboardInterrupt:
+        future.cancel()
