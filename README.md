@@ -24,7 +24,7 @@ The API documentation can be found at `http://localhost/docs`
 
 ## Video
 
-The video can be found at: `https://youtu.be/vw6jpMszz9M`
+The video can be found at: `https://youtu.be/p-bctkfNhqY`
 
 ## Authors
 
