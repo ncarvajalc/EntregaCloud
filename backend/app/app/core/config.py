@@ -14,11 +14,10 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: list[str] | list[AnyHttpUrl]
     MODE: ModeEnum = ModeEnum.development
     DATABASE_URL: str = "sqlite:///:memory:"
-    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
-    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
     SHARED_VOLUME_PATH: str = "/uploads"
     HOST: str = "http://localhost"
     GCP_BUCKET_NAME: str = "app"
+    GOOGLE_CLOUD_PROJECT: str = "project_id"
 
     class Config:
         case_sensitive = True

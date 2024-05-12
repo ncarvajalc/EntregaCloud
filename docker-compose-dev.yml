@@ -51,24 +51,15 @@ services:
     container_name: cloud_celery_worker
     build: ./worker
     restart: always
-    command: "sh -c 'celery -A tasks worker -l info -E'"
+    command: "sh -c 'python tasks.py'"
     volumes:
       - ./worker:/code
       - ./backend/app/uploads:/code${SHARED_VOLUME_PATH}
     env_file: "./.env"
-    environment:
-      - C_FORCE_ROOT=true
     expose:
       - 8000
     depends_on:
       - fastapi_server
-      - redis
-
-  redis:
-    image: redis:alpine
-    container_name: cloud_redis
-    expose:
-      - 6379
 
 volumes:
   nginx_logs:
