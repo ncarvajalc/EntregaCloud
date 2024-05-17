@@ -10,7 +10,7 @@ click-didyoumean==0.3.1
 click-plugins==1.1.1
 click-repl==0.3.0
 fastapi==0.110.1
-google-cloud-storage==2.9.0
+google-cloud-storage==2.16.0
 google-cloud-pubsub==2.21.1
 h11==0.14.0
 httpcore==1.0.5
