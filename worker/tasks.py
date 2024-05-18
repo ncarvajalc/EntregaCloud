@@ -7,6 +7,8 @@ import httpx
 from google.cloud import storage
 from dotenv import load_dotenv
 from pydantic import BaseModel
+import base64
+
 
 load_dotenv()
 
@@ -59,7 +61,7 @@ def process_video(message: PubSubMessage):
 
 
 def decode_message_data(message: PubSubMessage):
-    data = message.message["data"].split()
+    data = base64.b64decode(message.message["data"]).decode("utf-8").strip().split()
     task_id = data[0]
     file_path = data[1]
     return task_id, file_path
