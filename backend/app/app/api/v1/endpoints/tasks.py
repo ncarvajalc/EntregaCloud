@@ -51,7 +51,7 @@ bearer = HTTPBearer()
     response_model=Task,
     responses={401: {"model": TaskUnauthorized}, 400: {"model": TaskBadRequest}},
 )
-async def create_task(
+def create_task(
     file: UploadFile = File(...),
     auth: HTTPAuthorizationCredentials = Depends(bearer),
     db: Session = Depends(get_db),
@@ -59,12 +59,18 @@ async def create_task(
     """
     Creates a new video editing task. User requires authorization
     """
-    user_id = verify_token(auth.credentials)
-    await validate_is_video_file(file)
-    file_path = upload_file(file)
-    task_id = send_task_to_pubsub(file_path)
-    task = create_video_task(db, file_path, task_id, user_id)
-    return task
+    try:
+        user_id = verify_token(auth.credentials)
+        validate_is_video_file(file)
+        file_path = upload_file(file)
+        task_id = send_task_to_pubsub(file_path)
+        task = create_video_task(db, file_path, task_id, user_id)
+        return task
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
 
 
 @router.patch(

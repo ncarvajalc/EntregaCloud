@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 from app.models.tasks import TaskStatus
 from google.cloud import storage
 from google.cloud import pubsub_v1
+import datetime
 
 
 def get_all_tasks(db: Session, max: int, order: int, user_id: str):
@@ -59,9 +60,13 @@ def update_task(db: Session, task_id: UUID):
 
     task_to_update.status = TaskStatus.processed
     file_without_extension = os.path.splitext(task_to_update.file_name)[0]
-    task_to_update.url = (
-        f"{settings.HOST}/api/tasks/{file_without_extension}.mp4/download"
+    client = storage.Client()
+    bucket = client.bucket(settings.GCP_BUCKET_NAME)
+    blob = bucket.blob(f"edited_files/{file_without_extension}.mp4")
+    signed_url = blob.generate_signed_url(
+        expiration=datetime.datetime.now() + datetime.timedelta(days=1)
     )
+    task_to_update.url = signed_url
     db.commit()
     db.refresh(task_to_update)
     return task_to_update
@@ -129,7 +134,7 @@ def send_task_to_pubsub(file_path: str):
     return task_id
 
 
-async def validate_is_video_file(file: UploadFile):
+def validate_is_video_file(file: UploadFile):
     # Check if the file is a video file
     allowed_mime_types = [
         "video/mp4",

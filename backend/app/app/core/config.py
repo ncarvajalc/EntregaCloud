@@ -11,7 +11,6 @@ class ModeEnum(str, Enum):
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "app"
-    BACKEND_CORS_ORIGINS: list[str] | list[AnyHttpUrl]
     MODE: ModeEnum = ModeEnum.development
     DATABASE_URL: str = "sqlite:///:memory:"
     SHARED_VOLUME_PATH: str = "/uploads"
@@ -21,7 +20,6 @@ class Settings(BaseSettings):
 
     class Config:
         case_sensitive = True
-        env_file = os.path.expanduser("~/.env")
 
 
 settings = Settings()

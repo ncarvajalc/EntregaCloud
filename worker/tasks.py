@@ -1,12 +1,14 @@
 import os
 import shlex
 import subprocess
+from typing import Any, Dict
+from fastapi import FastAPI, HTTPException
 import httpx
 from google.cloud import storage
 from dotenv import load_dotenv
-from google.cloud import pubsub_v1
-from google.cloud.pubsub_v1.subscriber.message import Message
-import time
+from pydantic import BaseModel
+import base64
+
 
 load_dotenv()
 
@@ -15,8 +17,22 @@ BACKEND_URL = os.environ.get("BACKEND_URL", "http://fastapi_server")
 GCP_BUCKET_NAME = os.environ.get("GCP_BUCKET_NAME", "app")
 GOOGLE_CLOUD_PROJECT = os.environ.get("GOOGLE_CLOUD_PROJECT", "project_id")
 
+# Start FastAPI app
+app = FastAPI()
 
-def callback(message: Message):
+
+class PubSubMessage(BaseModel):
+    message: Dict[str, Any]
+    subscription: str
+
+
+@app.get("/")
+def root():
+    return "pong"
+
+
+@app.post("/")
+def process_video(message: PubSubMessage):
     print(f"Received message: {message}")
     try:
         task_id, file_path = decode_message_data(message)
@@ -28,21 +44,24 @@ def callback(message: Message):
         upload_file_to_bucket(edited_file_path, client)
         cleanup(file_path, edited_file_path)
 
-        message.ack()
-
         response = httpx.patch(
             f"{BACKEND_URL}/api/tasks/{task_id}",
         )
 
         if response.status_code != 200:
             print(f"Failed to update task {task_id} status: {response.text}")
+            return HTTPException(status_code=500, detail="Failed to update task status")
+
         print(f"Task {task_id} status updated successfully")
+
+        return {"status": "success"}
     except Exception as e:
         print(f"Error processing message: {str(e)}")
+        return HTTPException(status_code=500, detail=str(e))
 
 
-def decode_message_data(message: Message):
-    data = message.data.decode("utf-8").split()
+def decode_message_data(message: PubSubMessage):
+    data = base64.b64decode(message.message["data"]).decode("utf-8").strip().split()
     task_id = data[0]
     file_path = data[1]
     return task_id, file_path
@@ -83,15 +102,3 @@ def format_edited_file_path(file_path):
 def cleanup(file_path, edited_file_path):
     os.remove(f".{SHARED_VOLUME_PATH}/{file_path}")
     os.remove(f".{SHARED_VOLUME_PATH}/{edited_file_path}")
-
-
-with pubsub_v1.SubscriberClient() as subscriber:
-    subscription_path = subscriber.subscription_path(
-        GOOGLE_CLOUD_PROJECT, "video_consumer"
-    )
-    future = subscriber.subscribe(subscription_path, callback=callback)
-    print(f"Listening for messages on {subscription_path}...")
-    try:
-        future.result()
-    except KeyboardInterrupt:
-        future.cancel()
